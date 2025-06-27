@@ -34,7 +34,6 @@ def compute_and_save_embeddings(questions, api_key, file_path="all_files/faq_ope
     return embeddings
 
 def stqdm(iterable, desc=""):
-    # Streamlit-friendly progress bar
     progress = st.progress(0)
     total = len(iterable)
     for idx, item in enumerate(iterable):
@@ -44,7 +43,6 @@ def stqdm(iterable, desc=""):
 
 # ---- FAISS Build/Load ----
 def build_faiss_index(embeddings):
-    # Normalize for cosine similarity
     norm_emb = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
     index = faiss.IndexFlatIP(norm_emb.shape[1])
     index.add(norm_emb)
@@ -61,7 +59,7 @@ def retrieval_faiss(user_query, model, index, df, embeddings, questions, api_key
         return None, None, similarity, None
     return questions[idx], df.iloc[idx]['answer'], similarity, idx
 
-# ---- OpenAI LLM Rephrasing Function ----
+# ---- OpenAI LLM Rephrasing ----
 def openai_llm_answer(user_query, retrieved_q, retrieved_a, api_key):
     if retrieved_q is None or retrieved_a is None:
         return "Sorry, I don't know the answer to that. Please contact Jupiter support!"
@@ -85,7 +83,7 @@ def openai_llm_answer(user_query, retrieved_q, retrieved_a, api_key):
     )
     return response.choices[0].message.content.strip()
 
-# ---- Suggest Related FAQ Questions (FAISS Semantic) ----
+# ---- Suggest Related FAQ Questions ----
 def suggest_related_faqs_faiss(user_query, index, questions, embeddings, api_key, top_n=4, exclude_idx=None, sim_threshold=0.55):
     user_emb = get_openai_embedding(user_query, api_key)
     user_emb = user_emb / np.linalg.norm(user_emb)
@@ -114,7 +112,6 @@ openai_api_key = st.text_input("Enter your OpenAI API key:", type="password", he
 
 df, questions = load_faq_data()
 
-# Embedding/Index loading/generation (only happens once per API key)
 if openai_api_key:
     emb_file = "all_files/faq_openai_embeddings.npy"
     if os.path.exists(emb_file):
@@ -131,7 +128,8 @@ else:
     embeddings = None
     index = None
 
-user_query = st.text_input("Ask your question:")
+# ✅ Updated: allow text input to be prefilled from session_state
+user_query = st.text_input("Ask your question:", key="user_query")
 
 if user_query and openai_api_key and embeddings is not None:
     with st.spinner("Finding the best answers..."):
@@ -168,12 +166,12 @@ if user_query and openai_api_key and embeddings is not None:
             st.write(llm_response)
             st.caption(f"Time: {llm_time_ms:.0f} ms" if not hallucinated else "No LLM answer generated.")
 
-        # Related suggestions after query
+        # ✅ Updated: Suggest related questions with working rerun
         related = suggest_related_faqs_faiss(user_query, index, questions, norm_emb, openai_api_key, top_n=4, exclude_idx=idx)
         st.markdown("**You might also ask:**")
         for r in related:
             if st.button(r, key=f"sugg_{r}"):
-                st.session_state["input_box"] = r
+                st.session_state["user_query"] = r
                 st.experimental_rerun()
 
 st.markdown("---")
