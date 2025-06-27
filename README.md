@@ -7,7 +7,7 @@ An interactive system that answers user queries using FAQs scraped from Jupiter 
 ## Live Demo Link
 
 ```
-(https://jupiterproject-jd6tl8vrdbp9vdkheywqhc.streamlit.app/)
+https://jupiterproject-jd6tl8vrdbp9vdkheywqhc.streamlit.app/
 ```
 
 ## Features
