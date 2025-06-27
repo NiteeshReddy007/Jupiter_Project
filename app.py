@@ -128,7 +128,6 @@ else:
     embeddings = None
     index = None
 
-# ✅ Updated: allow text input to be prefilled from session_state
 user_query = st.text_input("Ask your question:", key="user_query")
 
 if user_query and openai_api_key and embeddings is not None:
@@ -166,13 +165,11 @@ if user_query and openai_api_key and embeddings is not None:
             st.write(llm_response)
             st.caption(f"Time: {llm_time_ms:.0f} ms" if not hallucinated else "No LLM answer generated.")
 
-        # ✅ Updated: Suggest related questions with working rerun
+        # ✅ Suggest related questions (non-functional buttons)
         related = suggest_related_faqs_faiss(user_query, index, questions, norm_emb, openai_api_key, top_n=4, exclude_idx=idx)
         st.markdown("**You might also ask:**")
         for r in related:
-            if st.button(r, key=f"sugg_{r}"):
-                st.session_state["user_query"] = r
-                st.experimental_rerun()
+            st.button(r, key=f"sugg_{r}", help="Visual suggestion only (no action)")
 
 st.markdown("---")
 st.info(
